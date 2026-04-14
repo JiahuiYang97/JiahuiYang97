@@ -1,16 +1,789 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My Portfolio</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Power of Diffusion Models</title>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    html {
+      background: #f0f2f5;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 50px 60px;
+      line-height: 1.6;
+      color: #333;
+      text-align: justify;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+    }
+    h1, h2, h3 {
+      color: #222;
+    }
+    h2 {
+      border-bottom: 2px solid #eee;
+      padding-bottom: 6px;
+      margin-top: 50px;
+    }
+    h3 {
+      margin-top: 30px;
+    }
+    .hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .hero p {
+      color: #555;
+      font-size: 1.1em;
+    }
+    .authors {
+      text-align: center;
+      color: #555;
+      margin-bottom: 10px;
+    }
+    .links {
+      text-align: center;
+      margin: 20px 0;
+    }
+    .links a {
+      display: inline-block;
+      margin: 0 10px;
+      padding: 8px 18px;
+      background: #222;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    .links a:hover {
+      background: #444;
+    }
+    .section {
+      margin-bottom: 40px;
+    }
+    .figure {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .figure img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .figure img:hover {
+      transform: scale(1.03);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+    .figure-row {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+    .figure-row .figure {
+      flex: 1;
+      min-width: 200px;
+    }
+    figcaption {
+      margin-top: 8px;
+      font-size: 0.9em;
+      color: #666;
+    }
+    code {
+      background: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px 14px;
+      text-align: left;
+    }
+    th {
+      background: #f0f0f0;
+    }
+    a {
+      color: #5b9bd5;
+    }
+    a:hover {
+      color: #3a7abf;
+    }
+    .highlight-box {
+      background: #f9f9f9;
+      border-left: 4px solid #555;
+      padding: 14px 18px;
+      margin: 20px 0;
+      border-radius: 0 6px 6px 0;
+    }
+    @keyframes flip180 {
+      0%   { transform: rotate(0deg); }
+      40%  { transform: rotate(0deg); }
+      50%  { transform: rotate(180deg); }
+      90%  { transform: rotate(180deg); }
+      100% { transform: rotate(0deg); }
+    }
+    .flip-anim img {
+      animation: flip180 8s ease-in-out infinite;
+    }
+    @keyframes zoomOut {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1); }
+      50%  { transform: scale(0.15); }
+      90%  { transform: scale(0.15); }
+      100% { transform: scale(1); }
+    }
+    .scale-anim img {
+      animation: zoomOut 8s ease-in-out infinite;
+    }
+    .swap-anim img {
+      animation: none;
+    }
+    @keyframes cfNormal {
+      0%, 15%  { opacity: 1; }
+      55%, 80% { opacity: 0; }
+      100%     { opacity: 1; }
+    }
+    @keyframes cfScaled {
+      0%, 15%  { opacity: 0; }
+      55%, 70% { opacity: 1; }
+      100%     { opacity: 0; }
+    }
+    .crossfade-wrap {
+      position: relative;
+      display: block;
+      width: 100%;
+    }
+    .crossfade-wrap .img-normal,
+    .crossfade-wrap .img-scaled {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      display: block;
+    }
+    .crossfade-wrap .img-normal {
+      animation: cfNormal 15s ease-in-out infinite;
+    }
+    .crossfade-wrap .img-scaled {
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%;
+      opacity: 0;
+      animation: cfScaled 15s ease-in-out infinite;
+    }
+    .figure-group {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px 16px 10px;
+      margin: 30px 0;
+      text-align: center;
+    }
+    .figure-group .figure-row {
+      margin: 0;
+    }
+    .figure-group .figure {
+      margin: 0;
+    }
+    .figure-group figcaption.group-caption {
+      margin-top: 10px;
+      font-size: 0.9em;
+      color: #666;
+    }
+    .caption-crossfade {
+      position: relative;
+      height: 1.4em;
+      margin-top: 8px;
+    }
+    .caption-crossfade .cap-normal,
+    .caption-crossfade .cap-scaled {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 0.9em;
+      color: #666;
+    }
+    .caption-crossfade .cap-normal {
+      animation: cfNormal 15s ease-in-out infinite;
+    }
+    .caption-crossfade .cap-scaled {
+      opacity: 0;
+      animation: cfScaled 15s ease-in-out infinite;
+    }
+  </style>
 </head>
 <body>
-    <h1>Welcome to My CS180 Portfolio!</h1>
-    <a href="./1/index.html">Project 1</a>
+
+<!-- ===================== HERO ===================== -->
+<div class="hero">
+  <h1>The Power of Diffusion Models</h1>
+  <p>Image Generation, Optical Illusions, and Training from Scratch</p>
+  <div class="authors">
+    <strong>Author Name</strong> &nbsp;·&nbsp; University / Institution &nbsp;·&nbsp; 2024
+  </div>
+  <div class="links">
+    <a href="#">Paper</a>
+    <a href="#">Code</a>
+    <a href="#">Dataset</a>
+  </div>
+</div>
+
+<!-- ===================== ABSTRACT ===================== -->
+<div class="section">
+  <h2>Abstract</h2>
+  <p>
+    This project explores the capabilities of diffusion models in image generation and processing.
+    A pretrained diffusion model (DeepFloyd IF) is applied to image generation from text prompts
+    and to creative image processing tasks such as optical illusion synthesis. In the second part,
+    a diffusion model is trained from scratch to understand the core mechanics of the approach.
+  </p>
+</div>
+
+<!-- ===================== PART 1: PRETRAINED MODEL ===================== -->
+<div class="section">
+  <h2>Part 1: Power of Diffusion Model</h2>
+  <p>
+    In this section, a pretrained diffusion model 
+    (<a href="https://huggingface.co/docs/diffusers/api/pipelines/deepfloyd_if" target="_blank">DeepFloyd IF</a>) 
+    is utilized to perform various image generation and processing tasks without any fine-tuning. 
+  </p>
+
+  <h3>1.1 DeepFloyd IF — Pretrained Diffusion Model</h3>
+  <p>
+    DeepFloyd IF is a two-stage text-to-image diffusion model developed by Stability AI. The first stage
+    generates images at 64&times;64 resolution, while the second stage upsamples these outputs to
+    256&times;256. Since the model cannot directly accept raw text strings, prompts must first be encoded
+    into embeddings — high-dimensional vectors (4096-dimensional in this case) that the model can process.
+    <a href="https://huggingface.co/spaces/jamesoncrate/CS180-T5-Encoder" target="_blank">A HuggingFace pipeline</a>
+    is used to convert text prompts into embeddings, which are saved as
+    <code>.pth</code> files and passed as input to DeepFloyd IF.
+  </p>
+  <p>
+    Figure 1 shows images generated from text prompts with varying numbers of inference steps
+    (<code>num_inference_steps</code>) and their corresponding execution times. Since the model is trained
+    over 1000 discrete timesteps, the maximum value of <code>num_inference_steps</code> used here is 999.
+    As expected, a low step count yields images of noticeably lower quality. Increasing
+    <code>num_inference_steps</code> progressively adds finer details and textures to the output, but also
+    increases execution time linearly. Beyond 500 steps, the execution time is doubled while
+    the improvement in visual quality becomes marginal.
+  </p>
+  <div class="figure">
+    <img src="images/a_photo_of_Totoro_from_my_neighbor_Tororo.png" alt="Text-to-Image Generation Results">
+    <img src="images/a_watercolor_painting_of_a_Ragdoll_cat.png" alt="Text-to-Image Generation Results">
+      <img src="images/a_photo_of_Marilyn_Monroe.png" alt="Text-to-Image Generation Results">
+    <img src="images/a_photo_of_Yosemite.png" alt="Text-to-Image Generation Results">
+    <figcaption>Figure 1. Images generated from text prompts using DeepFloyd IF with different
+        numbers of inference steps and execution time.</figcaption>
+  </div>
+
+  <h3>1.2 The Diffusion Model Denoiser</h3>
+  <p>
+    Starting from a clean image \(x_0\), noise is iteratively added to produce progressively
+    noisier versions \(x_t\), until pure noise is reached at timestep \(t = T\) (\(T=1000\) in this study).
+    A diffusion model learns to reverse this process, as shown in Figure 2. Given a noisy image \(x_t\)
+    and the timestep \(t\), the model predicts the noise present in the image. Using this prediction, the noise can either be
+    fully removed to obtain a direct estimate of \(x_0\), or partially removed to obtain an estimate of
+    \(x_{t-1}\) with slightly less noise.
+  </p>
+  <div class="figure">
+    <img src="images/diffusion_model_primer.png" alt="Effect of sampling steps">
+    <figcaption>Figure 2. The directed graphical model of a diffusion model denoiser.
+        [<a href="https://arxiv.org/abs/2006.11239" target="_blank">source</a>].
+    </figcaption>
+  </div>
+
+  <h4>1.2.1 The Forward Process</h4>
+  <p>
+    As the key part of diffusion, the forward process takes a clean image and adds noise to it, as defined by:
+    <div class="equation">
+        \[ q(x_t \mid x_0) = \mathcal{N}(x_t;\ \sqrt{\bar{\alpha}_t}\, x_0,\ (1 - \bar{\alpha}_t)\mathbf{I}) \tag{1.1} \]
+    </div>
+    which is equivalent to computing:
+    <div class="equation">
+        \[ x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \epsilon \quad \text{where } \epsilon \sim \mathcal{N}(0, \mathbf{I}) \tag{1.2} \]
+    </div>
+    That is, given a clean image \(x_0\), we get a noisy image \(x_t\) at timestep \(t\) by sampling from a
+    Gaussian with mean \( \sqrt{\bar{\alpha_t}}x_0 \) and variance \( (1-\bar{\alpha_t}) \). The \(\bar\alpha_t\)
+    is from the pretrained diffusion model variable <code>alphas_cumprod</code>. Remember that \(t=0\) corresponds
+    to a clean image, and larger \(t\) corresponds to more noise. Thus, \(\bar\alpha_t\) is closer to 1 for 
+    small \(t\) and closer to 0 for a large \(t\). 
+  </p>
+
+  <h4>1.2.2 Classical Denoising - Gaussian Blur</h4>
+  <p>
+    Gaussian blur is a classical image smoothing technique that convolves the image with a Gaussian
+    kernel, replacing each pixel with a weighted average of its neighbors. The standard deviation
+    \(\sigma\) controls the blur strength — a larger \(\sigma\) removes more noise but also loses
+    more detail. It is applied here as a simple baseline for comparison against the diffusion-based
+    denoiser, using <code>sigma</code> = 2 and <code>kernel_size</code> = 13 to cover over 99% of 
+    the Gaussian density. 
+  </p>
+
+  <h4>1.2.3 One-step Denoising Using the Diffusion Model</h4>
+  <p>
+    The denoiser of the pretrained DeepFloyd model is accessible via <code>stage_1.unet</code>, a UNet
+    trained on a large dataset of \((x_0, x_t)\) image pairs. The UNet is conditioned on the noise level
+    by taking the timestep \(t\) as an additional input. Since the model was trained with text conditioning,
+    a neutral prompt embedding (<code>"a high quality photo"</code>) is used. The one-step denoising
+    procedure is as follows: first, Gaussian noise is added to the clean image at a given timestep \(t\);
+    the noisy image, timestep, and prompt embedding are then passed to <code>stage_1.unet</code> to
+    estimate the noise; finally, the estimated noise is subtracted to recover a clean estimate of \(x_0\).
+  </p>
+
+  <h4>1.2.4 Iterative Denoising Using the Diffusion Model</h4>
+  <p>
+    Unlike one-step denoising, diffusion models are designed to denoise iteratively. In principle,
+    one could start from pure noise \(x_T\) at timestep \(T = 1000\), denoise one step at a time to
+    obtain \(x_{999}, x_{998}, \ldots\), and continue until reaching \(x_0\). However, this requires
+    running the UNet 1000 times, which is computationally expensive. In practice, inference can be
+    accelerated by skipping timesteps — a technique justified by the connection between diffusion
+    models and differential equations, which allows larger steps without significant loss in quality.
+  </p>
+
+  <p>
+  To skip steps, a reduced list of timesteps <code>strided_timesteps</code> is constructed, much
+  shorter than the full 1000-step sequence. <code>strided_timesteps[0]</code> corresponds to the
+  largest \(t\) (the noisiest image) and <code>strided_timesteps[-1]</code> corresponds to \(t = 0\)
+  (the clean image). A uniform stride of 30 works well in practice.
+
+  <p>At the \(i\)-th denoising step, the current timestep is \(t = \)<code>strided_timesteps[i]</code>
+  and the target is \(t' = \)<code>strided_timesteps[i+1]</code>, stepping from noisier to cleaner.
+  The transition is given by:</p>
+  <div class="equation">
+    \[ x_{t'} = \frac{\sqrt{\bar{\alpha}_{t'}}\,\beta_t}{1 - \bar{\alpha}_t}\, x_0 + \frac{\sqrt{\alpha_t}(1 - \bar{\alpha}_{t'})}{1 - \bar{\alpha}_t}\, x_t + v_\sigma \tag{1.3} \]
+    <div style="text-align:right; font-size:0.85em; color:#666; margin-top:4px;">
+      [<a href="https://arxiv.org/pdf/2006.11239" target="_blank">Ho et al., 2020</a>]
+    </div>
+  </div>
+  where:
+  <ul>
+    <li>\(x_t\) — the image at timestep \(t\)</li>
+    <li>\(x_{t'}\) — the image at timestep \(t' < t\) (less noisy)</li>
+    <li>\(\bar{\alpha}_t\) — defined by <code>alphas_cumprod</code>, as described above</li>
+    <li>\(\alpha_t = \bar{\alpha}_t / \bar{\alpha}_{t'}\)</li>
+    <li>\(\beta_t = 1 - \alpha_t\)</li>
+    <li>\(x_0\) — the current clean image estimate, obtained as in the previous section</li>
+  </ul>
+  <p>The term \(v_\sigma\) is a predicted noise variance term. In DeepFloyd, this is predicted by the
+  model itself and added via the supplied <code>add_variance</code> function.</p>
+    
+  <h3>1.2.5 Results</h3>
+  <p>
+    Two 64&times;64 images — Sather Tower and an old man facing the sea — are used to evaluate the
+    denoising methods, as shown in Figures 3 and 4. Each clean image is first corrupted using the
+    forward process at noise levels (timesteps) of 250, 500, and 750, then denoised using three
+    methods: Gaussian blur, one-step diffusion denoising, and iterative diffusion denoising
+    (top to bottom in the figures).
+  </p>
+  <p>
+    Gaussian blur performs poorly at recovering image content. Because the forward process removes
+    fine structural details, and Gaussian blur only smooths pixel values, it cannot reconstruct
+    high-frequency structures. The diffusion model, by contrast, recovers these details effectively.
+    At low to moderate noise levels, the one-step denoiser restores plausible images with sharp
+    details. However, at high noise levels (e.g., timestep 750), too much information is lost and
+    the model begins to hallucinate content inconsistent with the original.
+  </p>
+  <p>
+    Iterative denoising further improves reconstruction quality at lower noise levels, producing
+    sharper and more detailed results than one-step denoising at timesteps 250 and 500. However, it
+    also tends to hallucinate more at higher noise levels. For example, in Figure 3 at timestep 750,
+    the reconstructed image no longer resembles a tower, and in Figure 4 at timestep 500, the
+    clothing and hat of the old man differ noticeably from the original.
+  </p>
+
+  <div class="figure">
+    <img src="images/add_noise_sather_tower.png">
+    <img src="images/gaussian_blur_sather_tower.png">
+    <img src="images/one_step_denoising_sather_tower.png">
+    <img src="images/iterative_denoising_sather_tower.png">
+    <figcaption>Figure 3. Denoising the image of Sather Tower.</figcaption>
+  </div>
+
+  <div class="figure">
+    <img src="images/add_noise_old_man.png">
+    <img src="images/gaussian_blur_old_man.png">
+    <img src="images/one_step_denoising_old_man.png">
+    <img src="images/iterative_denoising_old_man.png">
+    <figcaption>Figure 4. Denoising the image of an old man facing the sea.</figcaption>
+  </div>
+
+  <h3>1.3 Diffusion Model Sampling</h3>
+  <p>
+    Beyond image denoising, the iterative denoising function can also be used to generate images from
+    scratch. Instead of starting from a partially noisy image, passing pure noise as input allows the
+    model to synthesize a completely new image. Figure 5 shows five samples generated this way.
+    While the results are visually coherent, the image quality is limited — fine details and
+    structures are often missing without additional guidance.
+  </p>
+  <div class="figure">
+    <img src="images/diffusion_sampling_without_CFG.png">
+    <figcaption>Figure 5. Examples of images generated from pure noises.</figcaption>
+  </div>
+  <p>
+    To improve image quality at the expense of diversity,
+    <a href="https://arxiv.org/abs/2207.12598" target="_blank">Classifier-Free Guidance (CFG)</a>
+    is applied. Two noise estimates are calcualted: a conditional estimate \(\epsilon_c\) based on a
+    text prompt, and an unconditional estimate \(\epsilon_u\). The final noise estimate is then:
+    <div class="equation">
+      \[ \epsilon = \epsilon_u + \gamma (\epsilon_c - \epsilon_u) \tag{1.4} \]
+    </div>
+    where \(\gamma\) is a scale parameter controlling the guidance strength. When \(\gamma = 0\),
+    the estimate is fully unconditional; when \(\gamma = 1\), it is fully conditional. For
+    \(\gamma > 1\), the model produces noticeably sharper and higher-quality images, though the
+    theoretical explanation for this behaviour remains an open question. Figure 6 shows samples
+    generated with CFG at different values of <code>scale</code>. Compared with Figure 5, the
+    results contain significantly more detail and structure. As <code>scale</code> increases, the
+    images become progressively sharper, but at <code>scale</code> = 7 the outputs begin to appear
+    over-sharpened and unnatural.
+  </p>
+  <div class="figure">
+    <img src="images/diffusion_sampling_with_CFG_s1.png">
+    <img src="images/diffusion_sampling_with_CFG_s3.png">
+    <img src="images/diffusion_sampling_with_CFG_s7.png">
+    <figcaption>Figure 6. Examples of images generated from pure noises using Classifier-Free Guidance.</figcaption>
+  </div>
+
+  <h3>1.4 Image-to-Image Translation</h3>
+  <p>
+    Beyond denoising, diffusion models can also be applied to image editing. As discussed in
+    Section 1.2, adding noise to a clean image and denoising it causes the model to synthesize new
+    content, effectively projecting the noisy image back onto the manifold of natural images. Image
+    editing exploits this property: by controlling the amount of noise added, one can control the
+    degree of modification. The experiments in this section follow the
+    <a href="https://sde-image-editing.github.io/" target="_blank">SDEdit</a> algorithm.
+  </p>
+  <h4>1.4.1 Image Editing</h4>
+  <p>Several clean images are noised at different levels and then denoised without text conditioning,
+    as shown in Figure 7. The parameter <code>i_start</code> controls the noise level: a lower value
+    corresponds to more noise added. At high <code>i_start</code> values (low noise), the output
+    remains visually close to the original while the model enriches it with finer details, improving
+    overall quality. Notably, it can even translate 2D cartoon images into photorealistic 3D
+    renderings (e.g., the avocado image). As <code>i_start</code> decreases and more noise is added,
+    the output progressively deviates from the source. Below <code>i_start</code> = 10, the generated
+    images bear little resemblance to the original.
+  </p>
+  <div class="figure">
+    <img src="images/image_translation_china_zun.png">
+    <img src="images/image_translation_horseshoe_bend.png">
+    <img src="images/image_translation_avacado.png">
+    <img src="images/image_translation_a_pig.png">
+    <img src="images/image_translation_a_spaceman.png">
+    <figcaption>Figure 7. Examples of images generated from pure noises using Classifier-Free Guidance.</figcaption>
+  </div>
+  <h4>1.4.2 Image Inpainting</h4>
+  <p>The same procedure can be extended to image inpainting, following the
+    <a href="https://arxiv.org/abs/2201.09865" target="_blank">RePaint</a> algorithm. Given an
+    original image \(x_\text{orig}\) and a binary mask \(\mathbf{m}\), the goal is to generate a
+    new image that preserves the original content wherever \(\mathbf{m} = 0\) and synthesizes new
+    content wherever \(\mathbf{m} = 1\).
+    This is achieved by running the standard denoising loop with one modification: at each timestep,
+    after obtaining \(x_t\), the unmasked region is replaced with the correspondingly noised version
+    of the original image:
+    <div class="equation">
+      \[ x_t \leftarrow \mathbf{m}\, x_t + (1 - \mathbf{m})\, \text{forward}(x_\text{orig}, t) \tag{1.5} \]
+    </div>
+    This ensures that pixels outside the mask remain consistent with \(x_\text{orig}\) at the
+    appropriate noise level for timestep \(t\), while pixels inside the mask are generated freely
+    by the diffusion model.
+  </p>
+  <p>
+    Figure 8 shows two images inpainted using the RePaint algorithm without text prompts. In the
+    first example, a mask covers the upper portion of Sather Tower, which the model replaces with
+    the structure of a lighthouse top. In the second, a mask covers the man in front of a house,
+    and the model fills the region with natural ground that blends seamlessly with the surroundings.
+    Both results demonstrate effective and coherent inpainting.
+  </p>
+  <div class="figure">
+    <img src="images/inpaint_no_prompt_sather_tower.png">
+    <img src="images/inpaint_no_prompt_a_house_with_a_man.png">
+    <figcaption>Figure 8. Inpaint images under a mask.</figcaption>
+  </div>
+
+  <h4>1.4.2 Text-Conditioned Image-to-Image Translation</h4>
+  <p>The same inpainting procedure is applied with a descriptive text prompt —
+    <code>"a photo of a dog"</code> in this case — to steer the synthesized content toward a
+    specific target, as shown in Figure 9. The effect of noise level is examined by varying
+    <code>i_start</code>. At low noise levels, the output remains close to the original with only
+    minor detail changes, and the prompt has little visible influence. As the noise level increases
+    (i.e., lower <code>i_start</code>), the prompt-driven features become apparent: the top of
+    Sather Tower is replaced by a dog's head, and the man in front of the house is replaced by a
+    dog. In both cases, the inpainted regions blend naturally with the surrounding image, demonstrating
+    the effectiveness of diffusion-based image editing.
+  </p>
+  <div class="figure">
+    <img src="images/inpaint_with_prompt_sather_tower.png">
+    <img src="images/inpaint_with_prompt_a_house_with_a_man.png">
+    <figcaption>Figure 9. Inpaint images under a mask according to given text prompts.</figcaption>
+  </div>
+
+  <h3>1.5 Visual Anagrams</h3>
+  <p>
+    <a href="https://dangeng.github.io/visual_anagrams/" target="_blank">Visual anagrams</a> are
+    optical illusions generated by diffusion models that reveal different content depending on
+    viewing orientation or distance. The key idea is to combine noise estimates computed under
+    different conditions at each denoising step, so that the image satisfies two prompts
+    simultaneously. Three variants are explored below: flip anagrams, frequency-based anagrams, 
+    and negative anagrams.
+  </p>
+  <h4>1.5.1 Flip Anagrams</h4>
+  <p>
+    In flip anagrams, \(x_t\) is denoised with prompt \(p_1\) to obtain \(\epsilon_1\).
+    Simultaneously, \(x_t\) is rotated 180° and denoised with prompt \(p_2\) to obtain
+    \(\epsilon_2\), which is then rotated back. The two estimates are averaged to form the final
+    noise estimate for the reverse step:
+    <div class="equation">
+      \[ \epsilon_1 = \text{UNet}_\text{CFG}(x_t,\, t,\, p_1) \tag{1.6} \]
+      \[ \epsilon_2 = \text{flip}\!\left(\text{UNet}_\text{CFG}(\text{flip}(x_t),\, t,\, p_2)\right) \tag{1.7} \]
+      \[ \epsilon = \frac{\epsilon_1 + \epsilon_2}{2} \tag{1.8} \]
+    </div>
+    where \(\text{flip}(\cdot)\) denotes a 180° rotation and \(p_1\), \(p_2\) are two different
+    text prompt embeddings. Figure 10 shows the generated images — each can be interpreted as a
+    distinct scene depending on viewing orientation.
+  </p>
+
+  <div class="figure-group">
+    <div class="figure-row">
+      <figure class="figure flip-anim" data-normal="People around campfire" data-flipped="An old man">
+        <img src="images/hybrid_man_campfire_256.png" alt="An old man / People around campfire">
+        <figcaption class="fig-caption">An old man</figcaption>
+      </figure>
+      <figure class="figure flip-anim" data-normal="Totoro" data-flipped="A dog">
+        <img src="images/hybrid_tororo_dog_256.png" alt="Totoro / A dog">
+        <figcaption class="fig-caption">Totoro</figcaption>
+      </figure>
+      <figure class="figure flip-anim" data-normal="Snowy mountains" data-flipped="A man">
+        <img src="images/hybrid_snow_man_256.png" alt="A man / Snowy mountains">
+        <figcaption class="fig-caption">A man</figcaption>
+      </figure>
+    </div>
+    <figcaption class="group-caption">Figure 10. Visual anagrams — images that reveal a different scene when rotated 180°</figcaption>
+  </div>
+  <h4>1.5.2 Frequency Anagrams</h4>
+  <p>
+    Frequency-based hybrid images are generated following a similar approach to the flip anagram technique. A composite noise estimate \(\epsilon\)
+    is constructed by computing noise estimates under two different text prompts and combining their
+    frequency components: low frequencies from \(\epsilon_1\) and high frequencies from \(\epsilon_2\).
+    The algorithm is:
+    <div class="equation">
+      \[ \epsilon_1 = \text{UNet}_\text{CFG}(x_t,\, t,\, p_1) \tag{1.9} \]
+      \[ \epsilon_2 = \text{UNet}_\text{CFG}(x_t,\, t,\, p_2) \tag{1.10} \]
+      \[ \epsilon = f_\text{lowpass}(\epsilon_1) + f_\text{highpass}(\epsilon_2) \tag{1.11} \]
+    </div>
+    where \(f_\text{lowpass}\) and \(f_\text{highpass}\) are low-pass and high-pass filters
+    (implemented as Gaussian blur with kernel size 33 and \(\sigma = 2\)), and \(p_1\), \(p_2\)
+    are two different text prompt embeddings. The resulting image appears as one scene up close
+    and a different scene when viewed from a distance, as shown in Figure 11.
+  </p>
+  <div class="figure-group">
+    <div class="figure-row">
+      <figure class="figure scale-anim" data-normal="Waterfall (close up)" data-scaled="Einstein (far away)">
+        <img src="images/hybrid_fre_Einstein_waterfall_256.png" alt="Einstein / Waterfall">
+        <figcaption class="fig-caption">Waterfall (close up)</figcaption>
+      </figure>
+      <figure class="figure scale-anim" data-normal="Mountain view (close up)" data-scaled="Dog (far away)">
+        <img src="images/hybrid_fre_dog_mountain_256.png" alt="Mountain view / Dog">
+        <figcaption class="fig-caption">Waterfall (close up)</figcaption>
+      </figure>
+      <figure class="figure scale-anim" data-normal="Flowers (close up)" data-scaled="Ragdoll cat (far away)">
+        <img src="images/hybrid_fre_cat_flowers_256.png" alt="Einstein / Waterfall">
+        <figcaption class="fig-caption">Waterfall (close up)</figcaption>
+      </figure>
+    </div>
+    <figcaption class="group-caption">Figure 11. Frequency-based hybrid images — appear different when viewed up close vs. from a distance</figcaption>
+  </div>
+
+  <h4>1.5.3 Negative Anagrams</h4>
+  <p>
+    Negative anagrams follow an analogous approach to flip anagrams, but instead of rotating the
+    image, the color-inverted image \(-x_t\) is used. Specifically, \(x_t\) is denoised with
+    prompt \(p_1\) to obtain \(\epsilon_1\). Simultaneously, the color-inverted image \(-x_t\) is
+    denoised with prompt \(p_2\), and the resulting estimate is negated to obtain \(\epsilon_2\).
+    The two are then averaged to form the final noise estimate:
+    <div class="equation">
+      \[ \epsilon_1 = \text{UNet}_\text{CFG}(x_t,\, t,\, p_1) \tag{1.12} \]
+      \[ \epsilon_2 = -\text{UNet}_\text{CFG}(-x_t,\, t,\, p_2) \tag{1.13} \]
+      \[ \epsilon = \frac{\epsilon_1 + \epsilon_2}{2} \tag{1.14} \]
+    </div>
+    where \(p_1\) and \(p_2\) are two different text prompt embeddings. Figure 12 shows the
+    generated negative anagrams, animated to illustrate how the perceived content changes upon
+    color inversion. 
+  </p>
+  <div class="figure-group">
+    <div class="figure-row">
+      <figure class="figure swap-anim">
+        <div class="crossfade-wrap">
+          <img class="img-normal" src="images/upscaled_man_skull_original.png" alt="A man">
+          <img class="img-scaled" src="images/upscaled_man_skull_negative.png" alt="A skull">
+        </div>
+        <div class="caption-crossfade">
+          <span class="cap-normal">A man</span>
+          <span class="cap-scaled">A skull</span>
+        </div>
+      </figure>
+      <figure class="figure swap-anim">
+        <div class="crossfade-wrap">
+          <img class="img-normal" src="images/upscaled_cat_hugging_original.png" alt="A cat">
+          <img class="img-scaled" src="images/upscaled_cat_hugging_negative.png" alt="A couple kissing">
+        </div>
+        <div class="caption-crossfade">
+          <span class="cap-normal">A cat</span>
+          <span class="cap-scaled">A couple kissing</span>
+        </div>
+      </figure>
+      <figure class="figure swap-anim">
+        <div class="crossfade-wrap">
+          <img class="img-normal" src="images/upscaled_woman_dress_original.png" alt="A dress">
+          <img class="img-scaled" src="images/upscaled_woman_dress_negative.png" alt="Flowers">
+        </div>
+        <div class="caption-crossfade">
+          <span class="cap-normal">A dress</span>
+          <span class="cap-scaled">Flowers</span>
+        </div>
+      </figure>
+    </div>
+    <figcaption class="group-caption">Figure 12. Negative anagrams — appear different when the color inverts</figcaption>
+  </div>
+
+</div>
+
+
+
+
+
+
+<script>
+  (function () {
+    const CYCLE = 8000;
+    const FLIP_START = CYCLE * 0.45;
+    const FLIP_END   = CYCLE * 0.95;
+
+    function updateCaptions() {
+      const t = Date.now() % CYCLE;
+      const isAlt = t >= FLIP_START && t < FLIP_END;
+
+      document.querySelectorAll('.flip-anim').forEach(fig => {
+        const cap = fig.querySelector('.fig-caption');
+        const next = isAlt ? fig.dataset.flipped : fig.dataset.normal;
+        if (cap && cap.textContent !== next) cap.textContent = next;
+      });
+
+      document.querySelectorAll('.scale-anim').forEach(fig => {
+        const cap = fig.querySelector('.fig-caption');
+        const next = isAlt ? fig.dataset.scaled : fig.dataset.normal;
+        if (cap && cap.textContent !== next) cap.textContent = next;
+      });
+
+    }
+
+    setInterval(updateCaptions, 200);
+  })();
+</script>
+
+<!-- ===================== PART 2: TRAINING FROM SCRATCH ===================== -->
+<div class="section">
+  <h2>Part 2: Training a Diffusion Model from Scratch</h2>
+  <p>
+    To understand the mechanics of diffusion models, a new model is trained from scratch
+    on a small dataset.
+  </p>
+
+  <h3>2.1 Forward Process (Noise Addition)</h3>
+  <p>
+    The forward process gradually adds Gaussian noise to a clean image over <code>T</code>
+    timesteps according to a fixed noise schedule.
+  </p>
+  <div class="highlight-box">
+    <strong>Key formula:</strong> &nbsp;
+    <code>q(x_t | x_0) = N(x_t ; √ᾱ_t · x_0, (1 − ᾱ_t) · I)</code>
+  </div>
+  <div class="figure">
+    <img src="images/forward_process.png" alt="Forward diffusion process">
+    <figcaption>Figure 4. Visualization of the forward noising process across timesteps.</figcaption>
+  </div>
+
+  <h3>2.2 UNet Architecture</h3>
+  <p>
+    A UNet is trained to predict the noise added at each timestep, conditioned on the timestep
+    embedding.
+  </p>
+  <div class="figure">
+    <img src="images/unet_architecture.png" alt="UNet Architecture">
+    <figcaption>Figure 5. UNet architecture used for noise prediction.</figcaption>
+  </div>
+
+  <h3>2.3 Training Details</h3>
+  <table>
+    <tr><th>Hyperparameter</th><th>Value</th></tr>
+    <tr><td>Timesteps (T)</td><td>1000</td></tr>
+    <tr><td>Noise schedule</td><td>Linear / Cosine</td></tr>
+    <tr><td>Batch size</td><td>128</td></tr>
+    <tr><td>Learning rate</td><td>2e-4</td></tr>
+    <tr><td>Epochs</td><td>20</td></tr>
+    <tr><td>Optimizer</td><td>Adam</td></tr>
+  </table>
+
+  <h3>2.4 Training Loss Curve</h3>
+  <div class="figure">
+    <img src="images/loss_curve.png" alt="Training Loss Curve">
+    <figcaption>Figure 6. Training loss over epochs.</figcaption>
+  </div>
+
+  <h3>2.5 Generated Samples</h3>
+  <p>Samples generated by the trained model after each epoch:</p>
+  <div class="figure">
+    <img src="images/generated_samples.png" alt="Generated samples">
+    <figcaption>Figure 7. Samples generated by the trained model at various training stages.</figcaption>
+  </div>
+</div>
+
+<!-- ===================== RESULTS ===================== -->
+<div class="section">
+  <h2>Results &amp; Discussion</h2>
+  <p>
+    [Summarize key findings, compare approaches, discuss failure cases and limitations.]
+  </p>
+</div>
+
+<!-- ===================== CONCLUSION ===================== -->
+<div class="section">
+  <h2>Conclusion</h2>
+  <p>
+    This project demonstrated the versatility of diffusion models both as pretrained tools
+    for creative image generation and as learnable architectures trainable from scratch.
+    Future work could explore conditional generation, faster sampling methods (DDIM), and
+    application to other data modalities.
+  </p>
+</div>
+
+<!-- ===================== REFERENCES ===================== -->
+<div class="section">
+  <h2>References</h2>
+  <ol>
+    <li>Ho et al., <em>Denoising Diffusion Probabilistic Models</em>, NeurIPS 2020.</li>
+    <li>Saharia et al., <em>Photorealistic Text-to-Image Diffusion Models with Deep Language Understanding</em>, NeurIPS 2022.</li>
+    <li>Song et al., <em>Denoising Diffusion Implicit Models</em>, ICLR 2021.</li>
+  </ol>
+</div>
+
 </body>
 </html>
