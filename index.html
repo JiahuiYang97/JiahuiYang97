@@ -699,70 +699,152 @@
   })();
 </script>
 
+
+
+
 <!-- ===================== PART 2: TRAINING FROM SCRATCH ===================== -->
 <div class="section">
   <h2>Part 2: Training a Diffusion Model from Scratch</h2>
   <p>
-    To understand the mechanics of diffusion models, a new model is trained from scratch
-    on a small dataset.
+    Unlike the previous section, which relied on a pretrained model, this section trains
+    <a href="https://arxiv.org/abs/2210.02747" target="_blank">flow matching</a> models from scratch.
+    The <a href="https://docs.pytorch.org/vision/main/generated/torchvision.datasets.MNIST.html" target="_blank">MNIST</a>
+    dataset is used for its simplicity and accessibility.
+    MNIST is a widely used benchmark consisting of 70,000 grayscale images of handwritten digits (0–9),
+    each 28&times;28 pixels in size, split into 60,000 training and 10,000 test samples. Its small
+    image size and well-understood structure make it an ideal testbed for training and evaluating
+    generative models.
   </p>
 
-  <h3>2.1 Forward Process (Noise Addition)</h3>
+  <h3>2.1 A Single-Step Denoising UNet</h3>
   <p>
-    The forward process gradually adds Gaussian noise to a clean image over <code>T</code>
-    timesteps according to a fixed noise schedule.
+    A UNet is trained as a one-step denoiser \(D_\theta\), which maps a noisy image \(z\)
+    to a clean image \(x\). It is optimized over an L2 loss:
+    <div class="equation">
+      \[ L = \mathbb{E}_{z,x}\|D_\theta(z) - x\|^2 \tag{2.1} \]
+    </div>
+    The UNet consists of downsampling, upsampling, and flatten/unflatten blocks
+    with skip connections, as illustrated in Figure 13. 
   </p>
-  <div class="highlight-box">
-    <strong>Key formula:</strong> &nbsp;
-    <code>q(x_t | x_0) = N(x_t ; √ᾱ_t · x_0, (1 − ᾱ_t) · I)</code>
-  </div>
   <div class="figure">
-    <img src="images/forward_process.png" alt="Forward diffusion process">
-    <figcaption>Figure 4. Visualization of the forward noising process across timesteps.</figcaption>
+    <img src="images/unconditional_unet.png" style="max-width: 70%;">
+    <figcaption>Figure 13. The structure of the UNet with standard operations.</figcaption>
   </div>
-
-  <h3>2.2 UNet Architecture</h3>
+  <ul>
+    <li><strong><code>Conv2d(kernel_size, stride, padding)</code></strong> is <code>nn.Conv2d()</code></li>
+    <li><strong><code>BN</code></strong> is <code>nn.BatchNorm2d()</code></li>
+    <li><strong><code>GELU</code></strong> is <code>nn.GELU()</code></li>
+    <li><strong><code>ConvTranspose2d(kernel_size, stride, padding)</code></strong> is <code>nn.ConvTranspose2d()</code></li>
+    <li><strong><code>AvgPool(kernel_size)</code></strong> is <code>nn.AvgPool2d()</code></li>
+    <li><strong><code>D</code></strong> is the number of hidden channels and is a hyperparameter that we will set ourselves.</li>
+  </ul>
+  <p>At a high level, the blocks do the following:</p>
+  <ul>
+    <li><strong>(1) <code>Conv</code></strong> is a convolutional layer that doesn't change the image resolution, only the channel dimension.</li>
+    <li><strong>(2) <code>DownConv</code></strong> is a convolutional layer that downsamples the tensor by 2.</li>
+    <li><strong>(3) <code>UpConv</code></strong> is a convolutional layer that upsamples the tensor by 2.</li>
+    <li><strong>(4) <code>Flatten</code></strong> is an average pooling layer that flattens a 7x7 tensor into a 1x1 tensor. 7 is the resulting height and width after the downsampling operations.</li>
+    <li><strong>(5) <code>Unflatten</code></strong> is a convolutional layer that unflattens/upsamples a 1x1 tensor into a 7x7 tensor.</li>
+    <li><strong>(6) <code>Concat</code></strong> is a channel-wise concatenation between tensors with the same 2D shape. This is simply <code>torch.cat()</code>.</li>
+  </ul>
   <p>
-    A UNet is trained to predict the noise added at each timestep, conditioned on the timestep
-    embedding.
+    Composed operations are built from simple operations in order to make the network
+    deeper. This doesn't change the tensor's height, width, or number of channels, but simply
+    adds more learnable parameters.
   </p>
-  <div class="figure">
-    <img src="images/unet_architecture.png" alt="UNet Architecture">
-    <figcaption>Figure 5. UNet architecture used for noise prediction.</figcaption>
-  </div>
 
-  <h3>2.3 Training Details</h3>
-  <table>
-    <tr><th>Hyperparameter</th><th>Value</th></tr>
-    <tr><td>Timesteps (T)</td><td>1000</td></tr>
-    <tr><td>Noise schedule</td><td>Linear / Cosine</td></tr>
-    <tr><td>Batch size</td><td>128</td></tr>
-    <tr><td>Learning rate</td><td>2e-4</td></tr>
-    <tr><td>Epochs</td><td>20</td></tr>
-    <tr><td>Optimizer</td><td>Adam</td></tr>
-  </table>
-
-  <h3>2.4 Training Loss Curve</h3>
-  <div class="figure">
-    <img src="images/loss_curve.png" alt="Training Loss Curve">
-    <figcaption>Figure 6. Training loss over epochs.</figcaption>
-  </div>
-
-  <h3>2.5 Generated Samples</h3>
-  <p>Samples generated by the trained model after each epoch:</p>
-  <div class="figure">
-    <img src="images/generated_samples.png" alt="Generated samples">
-    <figcaption>Figure 7. Samples generated by the trained model at various training stages.</figcaption>
-  </div>
-</div>
-
-<!-- ===================== RESULTS ===================== -->
-<div class="section">
-  <h2>Results &amp; Discussion</h2>
+  <h4>2.1.1 Adding noise to MNIST</h4>
   <p>
-    [Summarize key findings, compare approaches, discuss failure cases and limitations.]
+    To train the denoiser, data pairs \((z, x)\) are constructed by corrupting clean MNIST
+    digits \(x\) with Gaussian noise according to the following process:
+    <div class="equation">
+      \[ z = x + \sigma\epsilon, \quad \text{where } \epsilon \sim \mathcal{N}(0, I) \tag{2.2} \]
+    </div>
+    Figure 14 visualizes the effect of different noise levels \(\sigma = [0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0]\)
+    on normalized inputs \(x \in [0, 1]\). As expected, image quality degrades progressively with increasing \(\sigma\).
   </p>
-</div>
+  
+  <div class="figure">
+    <img src="images/noise_visualization.png" alt="UNet Architecture", style="max-width: 90%;">
+    <figcaption>Figure 14. MNIST digits with different noise levels.</figcaption>
+  </div>
+
+  <h4>2.1.2 Training</h4>
+  <p>
+    The denoiser was trained to recover clean images \(x\) from noisy inputs \(z\) at a fixed noise
+    level of \(\sigma = 0.5\). The MNIST training split was loaded via
+    <code>torchvision.datasets.MNIST</code> with shuffling enabled and a batch size of 256.
+    Noise was applied on-the-fly at each batch fetch, ensuring the network saw a fresh random
+    \(\epsilon\) at every iteration and improving generalization. The UNet from Section 2.1 was
+    used with hidden dimension <code>D = 128</code> and optimized with Adam at a learning rate
+    of 1e-4 for 5 epochs. Denoised results on the test set were recorded after the 1st and 5th
+    epoch to track reconstruction quality over training.
+
+    Figures 15 and 16 show the training loss curve and denoised outputs at each epoch, respectively.
+    The model converges rapidly within the first 50 iterations; beyond that, the loss continues to
+    decrease but at a much slower rate. This trend is consistent with the visual results: after
+    epoch 1 the denoised images are already recognizable, and the improvement in image quality from
+    epoch 2 to epoch 5 is marginal.
+  </p>
+  <div class="figure">
+    <img src="images/training_loss_curve_OneStep.png" alt="UNet Architecture", style="max-width: 90%;">
+    <figcaption>Figure 15. Training loss curve.</figcaption>
+  </div>
+  <div class="figure">
+    <img src="images/results_across_training_epochs.png" alt="UNet Architecture", style="max-width: 90%;">
+    <figcaption>Figure 16. Denoised images at each training epoch.</figcaption>
+  </div>
+
+  
+  <h4>2.1.3 Out-of-Distribution Testing</h4>
+  <p>
+    Since the denoiser was trained exclusively at \(\sigma = 0.5\), it was evaluated on MNIST digits
+    corrupted at out-of-distribution noise levels \(\sigma \in \{0.2, 0.4, 0.5, 0.6, 0.8, 1.0\}\)
+    to assess generalization, as shown in Figure 17. The denoiser performs well for noise levels up
+    to 0.6, producing clean and recognizable reconstructions. At \(\sigma = 0.8\) and \(\sigma = 1.0\),
+    however, the outputs deteriorate significantly and are largely unrecognizable. This is expected,
+    as the model was never exposed to such high noise levels during training. 
+  </p>
+  <div class="figure">
+    <img src="images/OOD_noise_visualization.png" alt="UNet Architecture", style="max-width: 90%;">
+    <figcaption>Figure 17. Training loss curve.</figcaption>
+  </div>
+
+  <h4>2.1.4 Denoising Pure Noise</h4>
+  <p>
+    The denoiser was further applied to pure Gaussian noise \(z = \epsilon\),
+    \(\epsilon \sim \mathcal{N}(0, \mathbf{I})\), treating generation as a denoising problem with
+    no structured input. The model was trained under the same setup as Section 2.1.2 for 5 epochs,
+    and outputs after the 1st and 5th epoch are shown in Figure 18.
+  </p>
+  <p>
+    A striking observation is that all generated images are nearly identical, regardless of the
+    noise sample drawn. This can be explained theoretically. Under the MSE loss
+    \(\mathcal{L} = \mathbb{E}_{z,x}[\|D_\theta(z) - x\|^2]\), the optimal denoiser is the
+    conditional expectation:
+    <div class="equation">
+      \[ D_\theta^*(z) = \mathbb{E}[X \mid Z]. \]
+    </div>
+    Since \(Z \sim \mathcal{N}(0, \mathbf{I})\) carries no information about
+    \(X \sim \mathcal{D}_\text{MNIST}\), the two are statistically independent (\(Z \perp X\)),
+    which gives:
+    <div class="equation">
+      \[ \mathbb{E}[X \mid Z] = \mathbb{E}[X]. \]
+    </div>
+    The optimal denoiser therefore collapses to a constant function:
+    <div class="equation">
+      \[ D_\theta^*(z) : Z \to \mathbb{E}[X]. \]
+    </div>
+    Because MNIST digits are spatially aligned and share a common scale, \(\mathbb{E}[X]\) is a
+    weighted average over all digit classes in which shared structural elements are reinforced,
+    producing the blurred, digit-like image seen in Figure 18.
+  </p>
+  <div class="figure">
+    <img src="images/onestep_pure_noise_denoising.png" alt="UNet Architecture", style="max-width: 90%;">
+    <figcaption>Figure 17. Training loss curve.</figcaption>
+  </div>
+
+
 
 <!-- ===================== CONCLUSION ===================== -->
 <div class="section">
